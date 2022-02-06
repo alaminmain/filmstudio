@@ -1,12 +1,17 @@
-﻿using Filmstudion.Authentication;
-using Microsoft.AspNetCore.Http;
-using Microsoft.AspNetCore.Identity;
+﻿
+using AutoMapper;
+using Filmstudion.Helpers;
+using Filmstudion.Models;
+using Filmstudion.Models.User;
+using Filmstudion.Resources.Users;
+using Filmstudion.Services;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.Configuration;
 using Microsoft.IdentityModel.Tokens;
 using System;
-using System.Collections.Generic;
 using System.IdentityModel.Tokens.Jwt;
+using System.Linq;
 using System.Security.Claims;
 using System.Text;
 using System.Threading.Tasks;
@@ -17,81 +22,100 @@ namespace Filmstudion.Controllers
     [ApiController]
     public class UsersController : ControllerBase
     {
-        private readonly UserManager<User> userManager;
-        private readonly RoleManager<IdentityRole> roleManager;
-        private readonly IConfiguration _configuration;
+        private readonly IUserService _userService;
+        private readonly IFilmStudioServices _filmStudioService;
+        private readonly IMapper _mapper;
+        private readonly IConfiguration _config;
 
-        public UsersController(UserManager<User> userManager, RoleManager<IdentityRole> roleManager, IConfiguration configuration)
+
+        public UsersController(
+            IUserService userService, IFilmStudioServices filmStudioService,
+            IMapper mapper,
+            IConfiguration config)
         {
-            this.userManager = userManager;
-            this.roleManager = roleManager;
-            _configuration = configuration;
+            _userService = userService;
+            _filmStudioService = filmStudioService;
+            _mapper = mapper;
+            _config = config;
         }
-        //An administrator should be able to register via the API, an administrator is not a filmstudio. (requirement 3)
-        //Method: POST
-        //Endpoint: /api/users/register
-        //See my example implementation below, edit to meet the requirements
-        [HttpPost]
-        [Route("register")]
-        public async Task<IActionResult> Register([FromBody] AdminRegisterModel model)
-        {
-            var userExists = await userManager.FindByNameAsync(model.Username);
-            if (userExists != null)
-                return StatusCode(StatusCodes.Status500InternalServerError, new Response { Status = "Error", Message = "User already exists!" });
 
-            User user = new User()
+        [AllowAnonymous]
+        [HttpPost("authenticate")]
+        public IActionResult Authenticate([FromBody] AuthenticateModel model)
+        {
+            var user = _userService.Authenticate(model.Email, model.Password);
+
+            if (user == null)
+                return BadRequest(new { message = "Email or password is incorrect" });
+
+            var tokenHandler = new JwtSecurityTokenHandler();
+            var key = Encoding.ASCII.GetBytes(_config["JWT:Secret"]);
+            var tokenDescriptor = new SecurityTokenDescriptor
             {
-                Email = model.Email,
-                SecurityStamp = Guid.NewGuid().ToString(),
-                UserName = model.Username
+                Subject = new ClaimsIdentity(new Claim[]
+                {
+                    new Claim(ClaimTypes.Name, user.Id.ToString())
+                }),
+                Expires = DateTime.UtcNow.AddMinutes(7),
+                SigningCredentials = new SigningCredentials(new SymmetricSecurityKey(key), SecurityAlgorithms.HmacSha256Signature)
             };
-            var result = await userManager.CreateAsync(user, model.Password);
-            if (!result.Succeeded)
-                return StatusCode(StatusCodes.Status500InternalServerError, new Response { Status = "Error", Message = "User creation failed! Please check user details and try again." });
+            var token = tokenHandler.CreateToken(tokenDescriptor);
+            var tokenString = tokenHandler.WriteToken(token);
 
-            return Ok(new Response { Status = "Success", Message = "User created successfully!" });
-        }
-        //Both filmstudios and administrators must be able to authenticate themselves via the API. (requirement 4)
-        //Method: POST
-        //Endpoint: /api/users/authenticate
-        //See my example implementation below, edit to meet the requirements. When you register now you get JWT token to authenticate with (see below)
-        [HttpPost]
-        [Route("authenticate")]
-        public async Task<IActionResult> Authenticate([FromBody] LoginModel model)
-        {
-            var user = await userManager.FindByNameAsync(model.Username);
-            if (user != null && await userManager.CheckPasswordAsync(user, model.Password))
+            return Ok(new
             {
-                var userRoles = await userManager.GetRolesAsync(user);
+                Id = user.Id,
+                Username = user.Email,
+                Token = tokenString
+            });
+        }
 
-                var authClaims = new List<Claim>
-                {
-                    new Claim(ClaimTypes.Name, user.UserName),
-                    new Claim(JwtRegisteredClaimNames.Jti, Guid.NewGuid().ToString()),
-                };
+        [AllowAnonymous]
+        [HttpPost("register")]
+        public async Task<IActionResult> Register([FromBody] RegisterFilmStudioModel model)
+        {
+            try
+            {
+                var filmStudio = _mapper.Map<RegisterFilmStudioModel, FilmStudio>(model);
+                var allFilmStudios = await _filmStudioService.GetAllFilmStudiosAsync();
+                int id = allFilmStudios.Count() + 1;
+                filmStudio.FilmStudioId = id;
 
-                foreach (var userRole in userRoles)
+                _filmStudioService.Add(filmStudio);
+
+                var user = _mapper.Map<User>(model);
+                if (await _filmStudioService.SaveChangesAsync())
                 {
-                    authClaims.Add(new Claim(ClaimTypes.Role, userRole));
+                    user.Email = model.Email;
+                    user.FilmStudioId = filmStudio.FilmStudioId;
+                    user.IsAdmin = false;
+                    // create user
+                    _userService.Create(user, model.Password);
                 }
-
-                var authSigningKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(_configuration["JWT:Secret"]));
-
-                var token = new JwtSecurityToken(
-                    issuer: _configuration["JWT:ValidIssuer"],
-                    audience: _configuration["JWT:ValidAudience"],
-                    expires: DateTime.Now.AddHours(3),
-                    claims: authClaims,
-                    signingCredentials: new SigningCredentials(authSigningKey, SecurityAlgorithms.HmacSha256)
-                    );
-
-                return Ok(new
-                {
-                    token = new JwtSecurityTokenHandler().WriteToken(token),
-                    expiration = token.ValidTo
-                });
+                return Ok();
             }
-            return Unauthorized();
+            catch (AppException ex)
+            {
+                // return error message if there was an exception
+                return BadRequest(new { message = ex.Message });
+            }
+        }
+
+        [AllowAnonymous]
+        [HttpPost("register/admin")]
+        public IActionResult RegisterAdmin([FromBody] RegisterAdminUserModel model)
+        {
+            var user = _mapper.Map<User>(model);
+
+            try
+            {
+                _userService.Create(user, model.Password);
+                return Ok();
+            }
+            catch (AppException ex)
+            {
+                return BadRequest(new { message = ex.Message });
+            }
         }
     }
 }
