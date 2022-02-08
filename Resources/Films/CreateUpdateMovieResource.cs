@@ -10,13 +10,13 @@ namespace Filmstudion.Resources.Movies
         public string Name { get; set; }
         [Required]
         //[Range(1900, 2021)]
-        public DateTime ReleaseDate { get; set; }
+        public int ReleaseDate { get; set; }
         [Required]
         public string Country { get; set; }
         [Required]
         public string Director { get; set; }
         [Required]
         [Range(1, 9)]
-        public int AmountOfCopies { get; set; }
+        public int NumberOfCopies { get; set; }
     }
 }

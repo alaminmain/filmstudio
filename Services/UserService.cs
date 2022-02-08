@@ -16,6 +16,7 @@ namespace Filmstudion.Services
             _context = context;
         }
 
+
         public User Authenticate(string email, string password)
         {
             if (string.IsNullOrEmpty(email) || string.IsNullOrEmpty(password))
@@ -25,8 +26,14 @@ namespace Filmstudion.Services
 
             if (user == null)
                 return null;
+            if (user.IsAdmin)
+                user.RoleName = "Admin";
+            else
+                user.RoleName = "filmstudio";
+            byte[] passwordHash, passwordSalt;
+            CreatePasswordHash(password, out passwordHash, out passwordSalt);
 
-            if (!VerifyPasswordHash(password, user.PasswordHash, user.PasswordSalt))
+            if (!VerifyPasswordHash(password, passwordHash, passwordSalt))
                 return null;
 
             return user;

@@ -11,5 +11,6 @@ namespace Filmstudion.Resources.Users
 
         public int FilmStudioId = 0;
         public bool IsAdmin = true;
+        public string RoleName { get; set; }
     }
 }

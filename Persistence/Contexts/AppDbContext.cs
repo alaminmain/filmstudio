@@ -25,35 +25,43 @@ namespace Filmstudion
             builder.Entity<FilmStudio>().HasData(new FilmStudio
             {
                 FilmStudioId = 1,
-                Name = "Röda Kvarn",
-                City = "Helsingborg"
+                Name = "Columbia Pictures",
+                City = "California"
 
             });
 
             builder.Entity<FilmStudio>().HasData(new FilmStudio
             {
                 FilmStudioId = 2,
-                Name = "Sagabiografen",
-                City = "Höganäs"
+                Name = "Warner Bros. Pictures",
+                City = "New York"
 
             });
 
             //---------------USERS-----------------------//
             builder.Entity<User>().HasData(new User
             {
-                FilmStudioId = 1,
+
                 Email = "olbin@data.com",
-                IsAdmin = false,
+                IsAdmin = true,
                 Id = 1,
                 Password = "P@ssw0rd!1"
             });
 
             builder.Entity<User>().HasData(new User
             {
-                FilmStudioId = 2,
+
                 Email = "rafiq@data.com",
-                IsAdmin = false,
+                IsAdmin = true,
                 Id = 2,
+                Password = "P@ssw0rd!2"
+            });
+            builder.Entity<User>().HasData(new User
+            {
+                FilmStudioId = 2,
+                Email = "safiq@data.com",
+                IsAdmin = false,
+                Id = 3,
                 Password = "P@ssw0rd!2"
             });
 
@@ -61,10 +69,10 @@ namespace Filmstudion
             builder.Entity<Film>().HasData(new Film
             {
                 FilmId = 1,
-                Name = "La jetée (Terassen)",
-                Director = "Chris Marker",
-                Country = "Frankrike",
-                ReleaseDate = System.DateTime.Now,
+                Name = "The Tomorrow War",
+                Director = "Chris McKay",
+                Country = "USA",
+                ReleaseYear = 2021,
                 NumberOfCopies = 2
             });
 
@@ -74,7 +82,7 @@ namespace Filmstudion
                 Name = "For Sama (Till min dotter)",
                 Director = "Waad Al-Kateab, Edward Watts",
                 Country = "Storbritannien",
-                ReleaseDate = System.DateTime.Now,
+                ReleaseYear = 2019,
                 NumberOfCopies = 4
             });
 
@@ -84,9 +92,20 @@ namespace Filmstudion
                 Name = "In the Mood for Love",
                 Director = "Wong Kar-Wai",
                 Country = "Kina",
-                ReleaseDate = System.DateTime.Now,
+                ReleaseYear = 2000,
                 NumberOfCopies = 3
             });
+            builder.Entity<Film>().HasData(new Film
+            {
+                FilmId = 4,
+                Name = "6 Underground",
+                Director = "Michael Bay",
+                Country = "USA",
+                ReleaseYear = 2019,
+                NumberOfCopies = 5
+            });
+
+
 
             //---------------FILMCOPIES---------------------//
             builder.Entity<FilmCopy>().HasData(new FilmCopy
@@ -124,7 +143,7 @@ namespace Filmstudion
                 FilmCopyId = 2.3,
                 FilmId = 2,
                 RentedOut = true,
-                FilmStudioId = 3
+                FilmStudioId = 2
             });
             builder.Entity<FilmCopy>().HasData(new FilmCopy
             {
@@ -145,16 +164,55 @@ namespace Filmstudion
             {
                 FilmCopyId = 3.2,
                 FilmId = 3,
-                RentedOut = true,
+                RentedOut = false,
                 FilmStudioId = 2
             });
             builder.Entity<FilmCopy>().HasData(new FilmCopy
             {
                 FilmCopyId = 3.3,
                 FilmId = 3,
-                RentedOut = true,
+                RentedOut = false,
                 FilmStudioId = 1
             });
+
+            builder.Entity<FilmCopy>().HasData(new FilmCopy
+            {
+                FilmCopyId = 4.1,
+                FilmId = 4,
+                RentedOut = false,
+                FilmStudioId = 0
+            });
+            builder.Entity<FilmCopy>().HasData(new FilmCopy
+            {
+                FilmCopyId = 4.2,
+                FilmId = 4,
+                RentedOut = false,
+                FilmStudioId = 0
+            });
+            builder.Entity<FilmCopy>().HasData(new FilmCopy
+            {
+                FilmCopyId = 4.3,
+                FilmId = 4,
+                RentedOut = false,
+                FilmStudioId = 0
+            });
+
+            builder.Entity<FilmCopy>().HasData(new FilmCopy
+            {
+                FilmCopyId = 4.4,
+                FilmId = 4,
+                RentedOut = false,
+                FilmStudioId = 0
+            });
+            builder.Entity<FilmCopy>().HasData(new FilmCopy
+            {
+                FilmCopyId = 4.5,
+                FilmId = 4,
+                RentedOut = false,
+                FilmStudioId = 0
+            });
+
+
         }
     }
 }

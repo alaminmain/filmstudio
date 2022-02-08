@@ -1,5 +1,4 @@
-﻿using System;
-using System.Collections.Generic;
+﻿using System.Collections.Generic;
 
 namespace Filmstudion.Models.Film
 {
@@ -7,7 +6,7 @@ namespace Filmstudion.Models.Film
     {
         public int FilmId { get; set; }
         public string Name { get; set; }
-        public DateTime ReleaseDate { get; set; }
+        public int ReleaseYear { get; set; }
         public string Country { get; set; }
         public string Director { get; set; }
         public int NumberOfCopies { get; set; }

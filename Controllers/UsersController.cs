@@ -1,7 +1,6 @@
 ﻿
 using AutoMapper;
 using Filmstudion.Helpers;
-using Filmstudion.Models;
 using Filmstudion.Models.User;
 using Filmstudion.Resources.Users;
 using Filmstudion.Services;
@@ -11,10 +10,8 @@ using Microsoft.Extensions.Configuration;
 using Microsoft.IdentityModel.Tokens;
 using System;
 using System.IdentityModel.Tokens.Jwt;
-using System.Linq;
 using System.Security.Claims;
 using System.Text;
-using System.Threading.Tasks;
 
 namespace Filmstudion.Controllers
 {
@@ -38,7 +35,33 @@ namespace Filmstudion.Controllers
             _mapper = mapper;
             _config = config;
         }
-
+        /// <summary>
+        /// 4: Both filmstudios and administrators must be able to authenticate
+        ///        themselves via the API.
+        ///       - This call should use the following method: POST
+        ///        Authentication should take place on a call to the following endpoint:
+        ///api/users/authenticate
+        ///        - The BODY in this call should be able to contain a json-stringed object that
+        ///        satisfies the IUserAuthenticate interface.
+        ///This object contains the necessary data to correctly authenticate a user.
+        ///- If this authentication is approved, a JSON object corresponding to the
+        ///interface IUser, all except ‘password’ property, must be returned.
+        ///It is important to hide sensitive information.When returning prohibited data, a
+        ///point deduction is made
+        ///- If the username and password used in the authentication belong to a
+        ///registered admin, the Role property must be a string with the word "admin".
+        ///uppercase or lowercase letters on this string do not matter.
+        ///- If the username and password used in the authentication belong to a
+        ///registered filmstudio, the Role property in the object must be a string with the
+        ///word “filmstudio”. The filmStudioId property must also be present and the
+        ///filmStudio property must contain an object that corresponds to the IFilmStudio
+        ///interface and contains at least data in the FilmStudioId, Name and City
+        ///properties.
+        ///- Further authentication in the application must take place via the header
+        ///"Authentication" when calling the API.
+        /// </summary>
+        /// <param name="model"></param>
+        /// <returns></returns>
         [AllowAnonymous]
         [HttpPost("authenticate")]
         public IActionResult Authenticate([FromBody] AuthenticateModel model)
@@ -66,43 +89,15 @@ namespace Filmstudion.Controllers
             {
                 Id = user.Id,
                 Username = user.Email,
+                RoleName = user.RoleName,
                 Token = tokenString
             });
         }
 
+
+        //  An  administrator  should  be  able  to  register  via  the  API,  an  administrator  is not  a  filmstudio. (requirment 3)
         [AllowAnonymous]
         [HttpPost("register")]
-        public async Task<IActionResult> Register([FromBody] RegisterFilmStudioModel model)
-        {
-            try
-            {
-                var filmStudio = _mapper.Map<RegisterFilmStudioModel, FilmStudio>(model);
-                var allFilmStudios = await _filmStudioService.GetAllFilmStudiosAsync();
-                int id = allFilmStudios.Count() + 1;
-                filmStudio.FilmStudioId = id;
-
-                _filmStudioService.Add(filmStudio);
-
-                var user = _mapper.Map<User>(model);
-                if (await _filmStudioService.SaveChangesAsync())
-                {
-                    user.Email = model.Email;
-                    user.FilmStudioId = filmStudio.FilmStudioId;
-                    user.IsAdmin = false;
-                    // create user
-                    _userService.Create(user, model.Password);
-                }
-                return Ok();
-            }
-            catch (AppException ex)
-            {
-                // return error message if there was an exception
-                return BadRequest(new { message = ex.Message });
-            }
-        }
-
-        [AllowAnonymous]
-        [HttpPost("register/admin")]
         public IActionResult RegisterAdmin([FromBody] RegisterAdminUserModel model)
         {
             var user = _mapper.Map<User>(model);
