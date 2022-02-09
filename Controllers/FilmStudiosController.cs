@@ -127,7 +127,12 @@ namespace Filmstudion.Controllers
                     // create user
                     _userService.Create(user, model.Password);
                 }
-                return Ok();
+                return Ok(new
+                {
+                    FilmStudioId = filmStudio.FilmStudioId,
+                    Name = filmStudio.Name,
+                    City = filmStudio.City
+                });
             }
             catch (AppException ex)
             {
@@ -174,7 +179,8 @@ namespace Filmstudion.Controllers
         //Method: GET
         //Endpoint: /api/filmstudio/rentals
         //Comment: Don't know if this should be in this controller, or add this in separate Controller or how to implement (you can decide)
-        [HttpGet("/rentals")]
+        [HttpGet]
+        [Route("/api/FilmStudios/rentals")]
         public async Task<ActionResult<FilmCopyResource[]>> GetAllRentedFilmCopiesAsync()
         {
             try

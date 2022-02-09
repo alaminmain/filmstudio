@@ -12,6 +12,7 @@ using System;
 using System.IdentityModel.Tokens.Jwt;
 using System.Security.Claims;
 using System.Text;
+using System.Threading.Tasks;
 
 namespace Filmstudion.Controllers
 {
@@ -64,7 +65,7 @@ namespace Filmstudion.Controllers
         /// <returns></returns>
         [AllowAnonymous]
         [HttpPost("authenticate")]
-        public IActionResult Authenticate([FromBody] AuthenticateModel model)
+        public async Task<IActionResult> AuthenticateAsync([FromBody] AuthenticateModel model)
         {
             var user = _userService.Authenticate(model.Email, model.Password);
 
@@ -84,14 +85,35 @@ namespace Filmstudion.Controllers
             };
             var token = tokenHandler.CreateToken(tokenDescriptor);
             var tokenString = tokenHandler.WriteToken(token);
-
-            return Ok(new
+            if (user.IsAdmin == false)
             {
-                Id = user.Id,
-                Username = user.Email,
-                RoleName = user.RoleName,
-                Token = tokenString
-            });
+                var filmStudios = await _filmStudioService.GetFilmStudioByIdAsync(user.FilmStudioId);
+                return Ok(
+                    new
+                    {
+                        Id = user.Id,
+                        Username = user.Email,
+
+                        RoleName = user.RoleName,
+                        Token = tokenString,
+                        filmStudioId = filmStudios.FilmStudioId,
+                        filmStudioName = filmStudios.Name,
+                        filmStudioCity = filmStudios.City,
+
+                    }
+                    );
+            }
+
+            else
+            {
+                return Ok(new
+                {
+                    Id = user.Id,
+                    Username = user.Email,
+                    RoleName = user.RoleName,
+                    Token = tokenString
+                });
+            }
         }
 
 
@@ -105,7 +127,13 @@ namespace Filmstudion.Controllers
             try
             {
                 _userService.Create(user, model.Password);
-                return Ok();
+
+                return Ok(new
+                {
+                    UserId = user.Id,
+                    UserName = user.Email,
+                    role = "admin"
+                });
             }
             catch (AppException ex)
             {

@@ -1,7 +1,8 @@
 ﻿using AutoMapper;
-using Filmstudion.Authentication;
+
 using Filmstudion.Models;
 using Filmstudion.Models.Film;
+using Filmstudion.Models.User;
 using Filmstudion.Resources.FilmCopies;
 using Filmstudion.Resources.Movies;
 using Filmstudion.Resources.Users;

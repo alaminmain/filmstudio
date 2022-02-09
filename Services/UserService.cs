@@ -27,7 +27,7 @@ namespace Filmstudion.Services
             if (user == null)
                 return null;
             if (user.IsAdmin)
-                user.RoleName = "Admin";
+                user.RoleName = "admin";
             else
                 user.RoleName = "filmstudio";
             byte[] passwordHash, passwordSalt;

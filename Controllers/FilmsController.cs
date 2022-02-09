@@ -241,8 +241,9 @@ namespace Filmstudion.Controllers
         //An authenticated filmstudio should be able to borrow a copy of a film via the Web API if copies are available. (requirement 12)
         //Method: POST
         //Endpoint: /api/films/rent?Id={id}&studioid={studioid}
-        [HttpPost("/rent")]
-        public async Task<ActionResult<FilmCopyResource>> RentFilmCopyAsync(int id, int studioid)
+        [HttpPost]
+        [Route("/api/Films/rent")]
+        public async Task<ActionResult<FilmCopyResource>> RentFilmCopyAsync(int id, int studioid) //id mean filmId
         {
             try
             {
@@ -252,7 +253,7 @@ namespace Filmstudion.Controllers
 
                 if (user.IsAdmin) { return Unauthorized("Only FilmStudios are allowed this action."); }
 
-                var filmCopies = await _filmStudioService.GetRentedFilmCopiesAsync(userId);
+                var filmCopies = await _filmStudioService.GetRentedFilmCopiesAsync(studioid);
                 var rentedFilmCopy = filmCopies.FirstOrDefault(f => f.FilmId == id);
 
                 if (rentedFilmCopy != null) { return StatusCode(StatusCodes.Status403Forbidden, $"You already rented a copy of the film with FilmId of {id}. Please return before continue."); }
@@ -281,7 +282,8 @@ namespace Filmstudion.Controllers
         //Method: POST
         //Endpoint: /api/films/return?Id={id}&studioid={studioid}
 
-        [HttpPut("/return")]
+        [HttpPut]
+        [Route("/api/Films/return")]
         public async Task<ActionResult<FilmCopyResource>> ReturnFilmCopyAsync(int id, int studioid)
         {
             try
