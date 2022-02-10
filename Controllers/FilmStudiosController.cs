@@ -90,9 +90,14 @@ namespace Filmstudion.Controllers
                         //film.AvailablefCopies = available.Count();
                         rentedfilm.RentedFilmcopies = filmCopies;
                     }
+                    return Ok(filmStudiosMap);
                 }
-                return Ok(filmStudiosMap);
+                else
+                {
+                    var filmStudiosForunauthenticated = filmStudiosMap.Select(e => new { e.FilmStudioId, e.Name }).ToList();
 
+                    return Ok(filmStudiosForunauthenticated);
+                }
 
             }
             catch (Exception)
@@ -151,23 +156,32 @@ namespace Filmstudion.Controllers
             try
             {
                 var filmStudios = await _filmStudioService.GetFilmStudioByIdAsync(Id);
-                var filmStudiosMap = _mapper.Map<PublicFilmStudioResource>(filmStudios);
+
                 if (User.Identity.IsAuthenticated)
                 {
                     var userName = User.Identity.Name;
                     var userId = int.Parse(userName);
                     var user = _userService.GetById(userId);
 
-                    if (user.IsAdmin)
+                    if (!user.IsAdmin)
                     {
 
                         var filmCopies = await _filmStudioService.GetRentedFilmCopiesAsync(filmStudios.FilmStudioId);
 
                         filmStudios.RentedFilmCopies = filmCopies.ToList();
                     }
-
+                    var filmStudiosMap = _mapper.Map<PublicFilmStudioResource>(filmStudios);
+                    return Ok(filmStudiosMap);
                 }
-                return Ok(filmStudiosMap);
+                else
+                {
+                    var filmStudiosForunauthenticated = new
+
+                    { FilmStudioId = filmStudios.FilmStudioId, Name = filmStudios.Name };
+
+                    return Ok(filmStudiosForunauthenticated);
+                }
+
             }
             catch (Exception)
             {
